@@ -1,7 +1,11 @@
 import dayjs from 'dayjs';
 import he from 'he';
+import { MAX_ROUTE_DESTINATIONS } from '../const.js';
 
 const SEPARATOR = ' — ';
+const ELLIPSIS = '...';
+const DATE_FORMAT_MONTH_DAY = 'MMM D';
+const DATE_FORMAT_DAY = 'D';
 
 export const formatRoute = (points, destinations) => {
   const uniqueDestinations = [...new Set(points.map((point) => {
@@ -13,11 +17,13 @@ export const formatRoute = (points, destinations) => {
     return '';
   }
 
-  if (uniqueDestinations.length <= 3) {
+  if (uniqueDestinations.length <= MAX_ROUTE_DESTINATIONS) {
     return uniqueDestinations.join(SEPARATOR);
   }
 
-  return `${uniqueDestinations[0]} — ... — ${uniqueDestinations[uniqueDestinations.length - 1]}`;
+  const firstCity = uniqueDestinations[0];
+  const lastCity = uniqueDestinations[uniqueDestinations.length - 1];
+  return `${firstCity} ${SEPARATOR} ${ELLIPSIS} ${SEPARATOR} ${lastCity}`;
 };
 
 export const formatDates = (points) => {
@@ -27,16 +33,18 @@ export const formatDates = (points) => {
 
   const sortedPoints = [...points].sort((a, b) => new Date(a.dateFrom) - new Date(b.dateFrom));
   const startDate = dayjs(sortedPoints[0].dateFrom);
-  const endDate = dayjs(sortedPoints[sortedPoints.length - 1].dateTo);
+  const endDate = dayjs(sortedPoints[sortedPoints.length - 1].dateEnd);
 
-  const startFormat = startDate.format('MMM D').toUpperCase();
-  const endFormat = endDate.format('MMM D').toUpperCase();
+  const startFormat = startDate.format(DATE_FORMAT_MONTH_DAY).toUpperCase();
+  const endFormat = endDate.format(DATE_FORMAT_MONTH_DAY).toUpperCase();
 
   if (startDate.isSame(endDate, 'month')) {
-    return `${startDate.format('MMM D')} — ${endDate.format('D')}`.toUpperCase();
+    const startDayMonth = startDate.format(DATE_FORMAT_MONTH_DAY);
+    const endDay = endDate.format(DATE_FORMAT_DAY);
+    return `${startDayMonth} ${SEPARATOR} ${endDay}`.toUpperCase();
   }
 
-  return `${startFormat} — ${endFormat}`;
+  return `${startFormat} ${SEPARATOR} ${endFormat}`;
 };
 
 export const calculateTotalPrice = (points, offersModel) => {
@@ -48,7 +56,7 @@ export const calculateTotalPrice = (points, offersModel) => {
     const pointOffers = point.offers || [];
     pointOffers.forEach((offer) => {
       const allOffers = offersModel.getOffersByType(point.type);
-      const offerData = allOffers.find((o) => o.id === offer.id);
+      const offerData = allOffers.find((offerItem) => offerItem.id === offer.id);
       if (offerData) {
         total += offerData.price;
       }

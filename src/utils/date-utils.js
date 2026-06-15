@@ -3,14 +3,23 @@ import duration from 'dayjs/plugin/duration.js';
 
 dayjs.extend(duration);
 
-export const formatDate = (date, format = 'DD/MM/YY HH:mm') => dayjs(date).format(format);
+export const formatShortDate = (date) => {
+  if (!date) {
+    return '';
+  }
+  const month = dayjs(date).format('MMM');
+  const day = dayjs(date).format('DD');
+  return `${month.charAt(0).toUpperCase() + month.slice(1)} ${day}`;
+};
 
-export const formatShortDate = (date) => dayjs(date).format('MMM DD').toUpperCase();
+export const formatTime = (date) => date ? dayjs(date).format('HH:mm') : '';
 
-export const formatTime = (date) => dayjs(date).format('HH:mm');
+export const formatDuration = (dateFrom, dateEnd) => {
+  if (!dateFrom || !dateEnd) {
+    return '';
+  }
 
-export const formatDuration = (dateFrom, dateTo) => {
-  const diff = dayjs(dateTo).diff(dayjs(dateFrom));
+  const diff = dayjs(dateEnd).diff(dayjs(dateFrom));
   const durationObj = dayjs.duration(diff);
 
   const days = Math.floor(durationObj.asDays());
@@ -26,4 +35,13 @@ export const formatDuration = (dateFrom, dateTo) => {
   return `${minutes}M`;
 };
 
+export const formatDate = (date, format = 'DD/MM/YY HH:mm') => dayjs(date).format(format);
+
 export const isDateEqual = (dateA, dateB) => dayjs(dateA).isSame(dateB, 'minute');
+
+export const humanizeTripDate = (date) => {
+  if (!date) {
+    return '';
+  }
+  return dayjs(date).format('DD MMM').toUpperCase();
+};

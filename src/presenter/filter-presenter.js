@@ -1,53 +1,45 @@
-import Filters from '../view/filters-view.js';
+import { render } from '../framework/render.js';
+import FiltersView from '../view/filters-view.js';
 
 export default class FilterPresenter {
+  #container = null;
   #filterModel = null;
   #pointsModel = null;
   #onFilterChange = null;
-  #filterComponent = null;
-  #container = null;
+  #onSortReset = null;
 
-  constructor({ filterModel, pointsModel, onFilterChange }) {
+  #filterComponent = null;
+
+  constructor({ filterContainer, filterModel, pointsModel, onFilterChange, onSortReset }) {
+    this.#container = filterContainer;
     this.#filterModel = filterModel;
     this.#pointsModel = pointsModel;
     this.#onFilterChange = onFilterChange;
-    this.#container = document.querySelector('.trip-controls__filters');
+    this.#onSortReset = onSortReset;
+
+    this.#filterModel.addObserver(this.#onModelUpdate);
   }
 
   init() {
-    this.#renderFilters();
-    this.#filterModel.addObserver(() => this.#handleModelChange());
-    this.#pointsModel.addObserver(() => this.#updateFilterAvailability());
-    this.#updateFilterAvailability();
+    const currentFilter = this.#filterModel.getFilter();
+    this.#filterComponent = new FiltersView(currentFilter, this.#onFilterSelect);
+    render(this.#filterComponent, this.#container);
   }
 
-  #renderFilters() {
-    if (!this.#container) {
-      return;
-    }
-    this.#filterComponent = new Filters();
-    this.#filterComponent.setFilterChangeHandler(this.#handleFilterChange.bind(this));
-    this.#container.innerHTML = '';
-    this.#container.appendChild(this.#filterComponent.element);
-  }
-
-  #handleFilterChange(filterType) {
+  #onFilterSelect = (filterType) => {
     if (this.#filterModel.getFilter() === filterType) {
       return;
     }
     this.#filterModel.setFilter(filterType);
-    this.#onFilterChange(filterType);
-  }
+    this.#onSortReset?.();
+    this.#onFilterChange?.();
+  };
 
-  #handleModelChange() {
-    const currentFilter = this.#filterModel.getFilter();
-    const filterAvailability = this.#filterModel.getFilterAvailability();
-    this.#filterComponent.updateFilter(currentFilter, filterAvailability);
-    this.#onFilterChange(currentFilter);
-  }
+  #onModelUpdate = () => {
+    this.#filterComponent.updateFilter(this.#filterModel.getFilter());
+  };
 
-  #updateFilterAvailability() {
-    const points = this.#pointsModel.getPoints();
-    this.#filterModel.updateFilterAvailability(points);
+  setFilterDisabled(filterType, isDisabled) {
+    this.#filterComponent.setDisabled(filterType, isDisabled);
   }
 }
